@@ -59,7 +59,7 @@ contract Item {
     
     event DestroyPackage(address indexed owner, uint indexed id, uint indexed level, uint timestamp);
 
-    // event RepaireItem(address indexed owner, uint indexed itemid, uint indexed packageid, uint amount, uint timestamp);
+    event RepaireItem(address indexed owner, uint indexed itemid, uint indexed packageid, uint amount, uint timestamp);
 
     address public accessAddr;
 
@@ -155,9 +155,12 @@ contract Item {
         uint c = items[itemid].durability.add(r);
         if(c<=items[itemid].max_durability){
             items[itemid].durability = c;
+            emit RepaireItem(addr,itemid, packid,c, block.timestamp);
         }else{
             items[itemid].durability = items[itemid].max_durability;
+            emit RepaireItem(addr,itemid, packid,items[itemid].max_durability.sub(items[itemid].durability), block.timestamp);
         }
+        
     }
 
 
@@ -166,11 +169,15 @@ contract Item {
     }
 
     function destoryItem(address addr, uint itemid)public onlyAccess{
-          
+          require(items[itemid].owner == addr, "not owner");
+          items[itemid].destroy_timestamp = block.timestamp;
+          emit DestroyItem(addr, itemid,items[itemid].level, block.timestamp);
     }
 
     function destoryPackage(address addr, uint pid)public onlyAccess{
-          
+         require(packages[pid].owner == addr, "not owner");
+         packages[pid].destroy_timestamp = block.timestamp;
+         emit DestroyPackage(addr, pid, packages[pid].level, block.timestamp); 
     }
     
     function getItemInformation(uint id) public view returns(ItemInfo memory){

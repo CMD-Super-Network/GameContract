@@ -79,6 +79,7 @@ contract User {
     event StartAction(address indexed addr, bytes32 indexed action, uint indexed action_type, uint a_id, uint timestamp);
     event ChangeNickName(address indexed addr, uint indexed timestamp, string nickName);
     event ChangeHeadUrl(address indexed addr, uint indexed timestamp, string headurl);
+    event UpgradeItemFailed(address indexed addr, uint indexed level, uint timestamp);
     //----------------------------end event
     
     
@@ -222,7 +223,7 @@ contract User {
             return id;
         }else{
 
-            // emit CreateItemFailed(msg.sender,item3,block.timestamp);
+            emit UpgradeItemFailed(msg.sender,p1.level,block.timestamp);
 
             _destroyItemWithEvent(item3,msg.sender);
             increaseFragments(p1.level,600);
@@ -254,7 +255,7 @@ contract User {
         // packages[pid].destroy_timestamp = block.timestamp;
         items.destoryPackage(addr,pid);
         deletePackageArray(packInfo.level, pid, addr);
-    }
+    } 
 
     
     function reqaireItem(uint itemid, uint packid ) public {
@@ -321,17 +322,17 @@ contract User {
 
     // //-------------------------------------------------get user information
     
-    // // function getUserItems(uint level) public view returns(uint [] memory){
-    // //     return users[msg.sender].items2[level];
-    // // }
+    function getUserItems(uint level) public view returns(uint [] memory){
+        return users[msg.sender].items2[level];
+    }
     
-    // // function getUserFragment(uint _type) public view returns(uint){
-    // //     return users[msg.sender].fragmentInfo[_type];
-    // // }
+    function getUserFragment(uint _type) public view returns(uint){
+        return users[msg.sender].fragmentInfo[_type];
+    }
     
-    // // function getUserPackages(uint level) public view returns (uint[]memory){
-    // //     return users[msg.sender].packages2[level];
-    // // }
+    function getUserPackages(uint level) public view returns (uint[]memory){
+        return users[msg.sender].packages2[level];
+    }
     
     function checkUserItems(address addr,uint level) public view returns( uint [] memory ){
         return users[addr].items2[level];
@@ -349,9 +350,9 @@ contract User {
     
 
     // //-------------------------------------------------get all information
-    // function getAllUser()public view returns(address[]memory){
-    //     return allUser;
-    // }
+    function getAllUser()public view returns(address[]memory){
+        return allUser;
+    }
     // //-------------------------------------------------end
     
     
