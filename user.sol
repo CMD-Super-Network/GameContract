@@ -61,6 +61,9 @@ contract User {
     bytes32 [] public actions;
 
     Item internal items;
+    Mine internal mine;
+    Monster internal monster;
+    IERC20 internal token;
     
     address public governance ;
     // constructor (address _itemContract,address _mineContract) public {
@@ -82,7 +85,13 @@ contract User {
     event UpgradeItemFailed(address indexed addr, uint indexed level, uint timestamp);
     //----------------------------end event
     
-    
+    struct UserAction {
+        bool status;
+        uint actionid;
+        uint action_type;
+    }
+
+    mapping(address =>UserAction) userAction;
 
     constructor()public{
         governance = msg.sender;
@@ -97,9 +106,23 @@ contract User {
         items = Item(addr);
     }
 
+    function setMine(address addr) public onlyOwner{
+        mine = Mine(addr);
+    }
+
+    function setMonster(address addr) public onlyOwner{
+        monster = Monster(addr);
+    }
+
     function changeOwner(address addr) public onlyOwner{
         governance = addr;
     }
+
+    function setToken(address addr)public onlyOwner {
+        token = IERC20(addr);
+    }
+
+
     
     function createUser(string memory nickName, string memory head_url) payable public returns(bool) {
         require(users[msg.sender].status == false,"user already exists");
@@ -162,6 +185,38 @@ contract User {
     }
 
 
+    function action(uint actionType, bytes32 id, uint itemid) public returns (uint){
+        require(userAction[msg.sender].status==false,"user has action, please finish this user action");
+        Item.ItemInfo memory info = items.getItemInformation(itemid);
+        require(info.owner == msg.sender,"not yours");
+        require(info.durability >0 ,"item was broken"); 
+        items.decreaseItemDurability(msg.sender, itemid);
+        userAction[msg.sender].status = true;
+        userAction[msg.sender].action_type = actionType;
+        if(actionType == 1){ // mine
+            uint mid = mine.mine(msg.sender, id, itemid);
+            userAction[msg.sender].actionid = mid;
+        }else if (actionType == 2) {  // hunter
+            uint mid = monster.fightMonster(msg.sender, id);
+            userAction[msg.sender].actionid = mid;
+        }
+    }
+
+    function finishAction()public{
+        require(userAction[msg.sender].status == true," user action has been finished");
+        if(userAction[msg.sender].action_type == 1){
+            Mine.RewardRes memory res = mine.collectMineReward(msg.sender,userAction[msg.sender].actionid);
+            if(res.status == true){
+                increaseFragments(res.level,res.amount);
+            }
+        }else if(userAction[msg.sender].action_type == 2){
+            Monster.RewardRes memory res = monster.collectMonsterReward(msg.sender, userAction[msg.sender].actionid);
+            token.mint(msg.sender, res.tokenAmount);
+            if (res.level >0){
+                items.createItem(msg.sender,res.level);
+            }
+        }
+    }
     
     
     function increaseFragments(uint _type, uint amount) public returns (bool){

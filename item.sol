@@ -163,6 +163,11 @@ contract Item {
         
     }
 
+    function decreaseItemDurability(address addr, uint itemid) public onlyAccess {
+        require(items[itemid].owner == addr, "not yours");
+        items[itemid].durability = items[itemid].durability.sub(1);
+    }
+
 
     function randonmNumber(address user, bytes32 id) internal view returns(uint){
         return uint(keccak256(abi.encodePacked(user,user,id,block.timestamp)))%10000;

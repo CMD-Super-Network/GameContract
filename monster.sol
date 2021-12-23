@@ -18,7 +18,7 @@ contract Monster {
     }
 
     struct FightRecord{
-        uint monstid;
+        bytes32 monstid;
         address fighter;
         bool status;
         uint start_timestamp;
@@ -28,7 +28,7 @@ contract Monster {
         uint reward_item_level;
     }
     
-    mapping(uint => MonsterInfo) public allMonster;
+    mapping(bytes32 => MonsterInfo) public allMonster;
 
     mapping(uint => FightRecord) public allFightRecords;
 
@@ -46,10 +46,16 @@ contract Monster {
 
     constructor()public{
         governance = msg.sender;
-        allMonster[1].level = 1;
-        allMonster[1].coin = 10;
-        allMonster[1].items = 1;
-        allMonster[1].time = 5 minutes;
+        bytes32 id = toByte32(1);
+        allMonster[id].level = 1;
+        allMonster[id].coin = 10;
+        allMonster[id].items = 1;
+        allMonster[id].time = 5 minutes;
+    }
+
+    function toByte32(uint x) internal returns (bytes32){
+        bytes32 b = bytes32(x);
+        return b;
     }
 
     modifier onlyOwner(){
@@ -70,7 +76,7 @@ contract Monster {
         userAddress = addr;
     }
 
-    function fightMonster(address user, uint monsterid) public onlyUserAddr returns (bool){
+    function fightMonster(address user, bytes32 monsterid) public onlyUserAddr returns (uint){
         require(allMonster[monsterid].level > 0 ,"error monster");
         uint id = monstherRecord;
         allFightRecords[id].monstid = monsterid;
@@ -79,11 +85,18 @@ contract Monster {
         allFightRecords[id].start_timestamp = block.timestamp;
         monstherRecord = monstherRecord.add(1);
         emit StartFight(user, id, block.timestamp);
-        return true;
+        return id;
 
     }
 
-    function collectMonsterReward(address user, uint fightId) public onlyUserAddr{
+    struct RewardRes{
+        bool status;
+        uint level;
+        uint itemAmount;
+        uint tokenAmount;
+    }
+
+    function collectMonsterReward(address user, uint fightId) public onlyUserAddr returns(RewardRes memory){
         require(allFightRecords[fightId].fighter == user,"not yours");
         require(allFightRecords[fightId].status == true,"already finished");
         require(allFightRecords[fightId].start_timestamp + allMonster[allFightRecords[fightId].monstid].time <= block.timestamp,"not ready");
@@ -93,6 +106,12 @@ contract Monster {
         allFightRecords[fightId].reward_item = 1;
         allFightRecords[fightId].reward_item_level = 1;
         emit CollectReward(user, fightId, block.timestamp);
+        RewardRes memory reward ;
+        reward.status = true;
+        reward.level = allFightRecords[fightId].reward_item_level;
+        reward.itemAmount =  allFightRecords[fightId].reward_item;
+        reward.tokenAmount = allFightRecords[fightId].reward_tokens;
+        return reward;
     }
 
 }

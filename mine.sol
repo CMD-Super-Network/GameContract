@@ -79,7 +79,7 @@ contract Mine {
     IERC20 public token;
     // ItemInterface public itemInterface;
     
-    Item public items;
+    Item internal items;
     
     uint public totalMine = 0;
 
@@ -170,9 +170,6 @@ contract Mine {
         totalMine = totalMine.add(amount);
     }
     
-    function startMine(bytes32 mine_id) internal {
-        
-    }
     
     function setToken(address addr)public{
         token = IERC20(addr);
@@ -185,7 +182,7 @@ contract Mine {
     function setUserAddress(address addr) public onlyOwner{
         userAddress = addr;
     }
-    
+
 
 
     function searchMine(address user, uint amount) public onlyUserAddr returns (bytes32){
@@ -428,7 +425,7 @@ contract Mine {
         uint amount;
     }
     
-    function collectMineReward(address user, uint id) internal returns (RewardRes memory){
+    function collectMineReward(address user, uint id) public onlyUserAddr returns (RewardRes memory){
         require(allMineRecords[id].end_timestamp == 0, "already collected reward");
         require(allMineRecords[id].miner == msg.sender,"not yours");
         return caculatorReward(id,msg.sender);
